@@ -25,3 +25,27 @@ export const LOGIN_MUTATION = gql`
     }
   }
 `;
+
+// Plaid mutations
+export const CREATE_LINK_TOKEN_MUTATION = gql`
+  mutation CreateLinkToken($input: CreateLinkTokenInput!) {
+    createLinkToken(input: $input) {
+      linkToken
+      expiration
+    }
+  }
+`;
+
+export const EXCHANGE_PUBLIC_TOKEN_MUTATION = gql`
+  mutation ExchangePublicToken($input: ExchangePublicTokenInput!) {
+    exchangePublicToken(input: $input) {
+      item {
+        id
+        institutionId
+        institutionName
+        status
+      }
+      accountsCreated
+    }
+  }
+`;
