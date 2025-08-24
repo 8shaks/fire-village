@@ -2,7 +2,7 @@ import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 
 const httpLink = createHttpLink({
-  uri: "https://leaf-village-api-696459131761.us-central1.run.app/query",
+  uri: "http://localhost:8080/query",
 });
 
 const authLink = setContext((_, { headers }) => {

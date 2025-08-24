@@ -25,7 +25,7 @@ export const authService = {
   signup: async (variables: SignupVariables): Promise<AuthResponse> => {
     const { data } = (await client.mutate({
       mutation: SIGNUP_MUTATION,
-      variables,
+      variables: { input: variables },
     })) as { data: { signup: AuthResponse } };
 
     if (!data?.signup) {
@@ -42,7 +42,7 @@ export const authService = {
   login: async (variables: LoginVariables): Promise<AuthResponse> => {
     const { data } = (await client.mutate({
       mutation: LOGIN_MUTATION,
-      variables,
+      variables: { input: variables },
     })) as { data: { login: AuthResponse } };
 
     if (!data?.login) {
