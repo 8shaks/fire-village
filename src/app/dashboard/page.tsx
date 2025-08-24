@@ -7,7 +7,7 @@ import { useAuth, useLogout } from '@/hooks/useAuth';
 import { usePlaid } from '@/hooks/usePlaid';
 import PlaidLinkButton from '@/components/PlaidLink';
 import ConnectedAccounts from '@/components/ConnectedAccounts';
-import { PlaidLinkOnSuccessMetadata, PlaidLinkOnExitMetadata, PlaidLinkError } from '@/types/plaid';
+import { PlaidLinkOnSuccessMetadata, PlaidLinkOnExitMetadata } from 'react-plaid-link';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -43,9 +43,10 @@ export default function DashboardPage() {
     }, 5000);
   };
 
-  const handlePlaidExit = (error: PlaidLinkError | null, metadata: PlaidLinkOnExitMetadata) => {
-    if (error) {
-      console.error('Plaid Link error:', error);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handlePlaidExit = (err: any, metadata: PlaidLinkOnExitMetadata) => {
+    if (err) {
+      console.error('Plaid Link error:', err);
     } else {
       console.log('User exited Plaid Link', metadata);
     }
