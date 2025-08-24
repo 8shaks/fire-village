@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { usePlaidLink, PlaidLinkOnSuccess, PlaidLinkOnExit, PlaidLinkOnSuccessMetadata, PlaidLinkOnExitMetadata } from 'react-plaid-link';
 import PlaidService from '@/services/plaid.service';
 
@@ -24,29 +24,7 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Fetch link token when component mounts
-  useEffect(() => {
-    const fetchLinkToken = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const response = await PlaidService.createLinkToken({
-          products,
-          countryCodes,
-        });
-        setLinkToken(response.linkToken);
-      } catch (err) {
-        console.error('Error fetching link token:', err);
-        setError('Failed to initialize bank connection. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLinkToken();
-  }, [products, countryCodes]);
+  const [shouldOpen, setShouldOpen] = useState(false);
 
   // Handle successful bank connection
   const onSuccess: PlaidLinkOnSuccess = useCallback(
@@ -74,6 +52,10 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
         if (onSuccessProp) {
           onSuccessProp(publicToken, metadata);
         }
+        
+        // Reset state after successful connection
+        setLinkToken(null);
+        setShouldOpen(false);
       } catch (err) {
         console.error('Error exchanging public token:', err);
         setError('Failed to complete bank connection. Please try again.');
@@ -94,6 +76,11 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
         console.error('Plaid Link error:', err);
       }
       
+      // Reset state on exit
+      setLinkToken(null);
+      setShouldOpen(false);
+      setIsLoading(false);
+      
       // Call the parent's onExit callback if provided
       if (onExitProp) {
         onExitProp(err, metadata);
@@ -111,23 +98,34 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
 
   const { open, ready } = usePlaidLink(config);
 
-  const handleClick = () => {
-    if (ready) {
+  // Automatically open Plaid Link when ready and should open
+  useEffect(() => {
+    if (linkToken && ready && shouldOpen) {
       open();
+      setShouldOpen(false);
     }
-  };
+  }, [linkToken, ready, shouldOpen, open]);
 
-  // Show loading state while fetching link token
-  if (isLoading && !linkToken) {
-    return (
-      <button
-        disabled
-        className={`px-6 py-3 bg-gray-300 text-gray-500 font-medium rounded-lg cursor-not-allowed ${className}`}
-      >
-        Initializing...
-      </button>
-    );
-  }
+  // Handle button click
+  const handleClick = useCallback(async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await PlaidService.createLinkToken({
+        products,
+        countryCodes,
+      });
+      setLinkToken(response.linkToken);
+      setShouldOpen(true);
+    } catch (err) {
+      console.error('Error fetching link token:', err);
+      setError('Failed to initialize bank connection. Please try again.');
+      setIsLoading(false);
+    }
+  }, [isLoading, products, countryCodes]);
 
   // Show error state
   if (error) {
@@ -135,7 +133,11 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
       <div className="space-y-2">
         <p className="text-red-600 text-sm">{error}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            setError(null);
+            setLinkToken(null);
+            setShouldOpen(false);
+          }}
           className={`px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors ${className}`}
         >
           Retry
@@ -147,10 +149,10 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
   return (
     <button
       onClick={handleClick}
-      disabled={!ready || isLoading}
+      disabled={isLoading}
       className={`px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed ${className}`}
     >
-      {isLoading ? 'Processing...' : buttonText}
+      {isLoading ? 'Initializing...' : buttonText}
     </button>
   );
 };
