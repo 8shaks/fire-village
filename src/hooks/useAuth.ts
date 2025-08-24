@@ -8,7 +8,7 @@ export const useSignup = () => {
 
   return useMutation({
     mutationFn: (variables: SignupVariables) => authService.signup(variables),
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Invalidate and refetch any user queries
       queryClient.invalidateQueries({ queryKey: ['user'] });
       // Redirect to dashboard
@@ -26,7 +26,7 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (variables: LoginVariables) => authService.login(variables),
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Invalidate and refetch any user queries
       queryClient.invalidateQueries({ queryKey: ['user'] });
       // Redirect to dashboard
