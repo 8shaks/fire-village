@@ -32,6 +32,14 @@ export interface ExchangePublicTokenResponse {
   accountsCreated: number;
 }
 
+interface CreateLinkTokenMutationResponse {
+  createLinkToken: LinkTokenResponse;
+}
+
+interface ExchangePublicTokenMutationResponse {
+  exchangePublicToken: ExchangePublicTokenResponse;
+}
+
 export class PlaidService {
   /**
    * Creates a Plaid Link token for initiating the bank connection flow
@@ -46,12 +54,16 @@ export class PlaidService {
         webhookUrl: input.webhookUrl || undefined,
       };
 
-      const { data } = await client.mutate({
+      const { data } = await client.mutate<CreateLinkTokenMutationResponse>({
         mutation: CREATE_LINK_TOKEN_MUTATION,
         variables: { 
           input: defaultInput
         },
       });
+
+      if (!data) {
+        throw new Error('No data returned from createLinkToken mutation');
+      }
 
       return data.createLinkToken;
     } catch (error) {
@@ -65,7 +77,7 @@ export class PlaidService {
    */
   static async exchangePublicToken(publicToken: string): Promise<ExchangePublicTokenResponse> {
     try {
-      const { data } = await client.mutate({
+      const { data } = await client.mutate<ExchangePublicTokenMutationResponse>({
         mutation: EXCHANGE_PUBLIC_TOKEN_MUTATION,
         variables: { 
           input: { 
@@ -73,6 +85,10 @@ export class PlaidService {
           } 
         },
       });
+
+      if (!data) {
+        throw new Error('No data returned from exchangePublicToken mutation');
+      }
 
       return data.exchangePublicToken;
     } catch (error) {

@@ -43,8 +43,7 @@ export default function DashboardPage() {
     }, 5000);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handlePlaidExit = (err: any, metadata: PlaidLinkOnExitMetadata) => {
+  const handlePlaidExit = (err: unknown, metadata: PlaidLinkOnExitMetadata) => {
     if (err) {
       console.error('Plaid Link error:', err);
     } else {

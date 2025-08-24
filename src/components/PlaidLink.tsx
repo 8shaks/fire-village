@@ -6,8 +6,7 @@ import PlaidService from '@/services/plaid.service';
 
 interface PlaidLinkButtonProps {
   onSuccess?: (publicToken: string, metadata: PlaidLinkOnSuccessMetadata) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onExit?: (err: any, metadata: PlaidLinkOnExitMetadata) => void;
+  onExit?: (err: unknown, metadata: PlaidLinkOnExitMetadata) => void;
   className?: string;
   buttonText?: string;
   products?: string[];
@@ -87,8 +86,7 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
 
   // Handle exit from Plaid Link
   const onExit: PlaidLinkOnExit = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (err: any, metadata: PlaidLinkOnExitMetadata) => {
+    (err: unknown, metadata: PlaidLinkOnExitMetadata) => {
       console.log('Plaid Link exit:', { error: err, metadata });
       
       if (err) {
