@@ -1,48 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import { useAuth, useLogout } from '@/hooks/useAuth';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoading, isAuthenticated } = useAuth();
+  const logoutMutation = useLogout();
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (!token) {
-      // Redirect to login if no token
+    // Redirect to login if not authenticated and not loading
+    if (!isLoading && !isAuthenticated) {
       router.push('/login');
-      return;
     }
-
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (e) {
-        console.error('Failed to parse user data:', e);
-      }
-    }
-  }, [router]);
+  }, [isAuthenticated, isLoading, router]);
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    // Redirect to home
-    router.push('/');
+    logoutMutation.mutate();
   };
 
-  if (!user) {
+  if (isLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <div className="text-center">
@@ -50,6 +29,10 @@ export default function DashboardPage() {
         </div>
       </main>
     );
+  }
+
+  if (!user) {
+    return null; // Will redirect in useEffect
   }
 
   return (
@@ -67,9 +50,10 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              disabled={logoutMutation.isPending}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Logout
+              {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
             </button>
           </div>
 

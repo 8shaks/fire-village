@@ -1,34 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LOGIN_MUTATION } from '@/graphql/mutations';
+import { useLogin } from '@/hooks/useAuth';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const [login, { loading }] = useMutation(LOGIN_MUTATION, {
-    onCompleted: (data) => {
-      // Store the token in localStorage
-      if (data.login.token) {
-        localStorage.setItem('token', data.login.token);
-        // Store user info if needed
-        localStorage.setItem('user', JSON.stringify(data.login.user));
-        // Redirect to home or dashboard
-        router.push('/dashboard');
-      }
-    },
-    onError: (error) => {
-      setError(error.message);
-    }
-  });
+  const loginMutation = useLogin();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,23 +19,18 @@ export default function LoginPage() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
-    if (error) setError('');
+    // Clear mutation error when user starts typing
+    if (loginMutation.isError) loginMutation.reset();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      await login({
-        variables: {
-          email: formData.email,
-          password: formData.password
-        }
-      });
-    } catch (err) {
-      // Error is handled in onError callback
-    }
+    // Execute the mutation
+    loginMutation.mutate({
+      email: formData.email,
+      password: formData.password
+    });
   };
 
   return (
@@ -69,9 +47,15 @@ export default function LoginPage() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
+          {loginMutation.isError && (
             <div className="bg-red-50 dark:bg-red-900/50 border border-red-400 text-red-700 dark:text-red-400 px-4 py-3 rounded">
-              {error}
+              {loginMutation.error?.message || 'An error occurred during login'}
+            </div>
+          )}
+
+          {loginMutation.isSuccess && (
+            <div className="bg-green-50 dark:bg-green-900/50 border border-green-400 text-green-700 dark:text-green-400 px-4 py-3 rounded">
+              Login successful! Redirecting...
             </div>
           )}
 
@@ -88,7 +72,8 @@ export default function LoginPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                disabled={loginMutation.isPending}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800 disabled:opacity-50"
                 placeholder="Email address"
               />
             </div>
@@ -105,7 +90,8 @@ export default function LoginPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                disabled={loginMutation.isPending}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800 disabled:opacity-50"
                 placeholder="Password"
               />
             </div>
@@ -117,7 +103,10 @@ export default function LoginPage() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={loginMutation.isPending}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
                 Remember me
@@ -134,10 +123,10 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loginMutation.isPending}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
 

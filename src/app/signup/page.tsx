@@ -1,34 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@apollo/client';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { SIGNUP_MUTATION } from '@/graphql/mutations';
+import { useSignup } from '@/hooks/useAuth';
 
 export default function SignUpPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
+  const [validationError, setValidationError] = useState('');
 
-  const [signup, { loading }] = useMutation(SIGNUP_MUTATION, {
-    onCompleted: (data) => {
-      // Store the token in localStorage
-      if (data.signup.token) {
-        localStorage.setItem('token', data.signup.token);
-        // Redirect to home or dashboard
-        router.push('/');
-      }
-    },
-    onError: (error) => {
-      setError(error.message);
-    }
-  });
+  const signupMutation = useSignup();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,8 +21,10 @@ export default function SignUpPage() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
-    if (error) setError('');
+    // Clear validation error when user starts typing
+    if (validationError) setValidationError('');
+    // Clear mutation error when user starts typing
+    if (signupMutation.isError) signupMutation.reset();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,28 +32,29 @@ export default function SignUpPage() {
     
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setValidationError('Passwords do not match');
       return;
     }
 
     // Validate password length
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setValidationError('Password must be at least 6 characters');
       return;
     }
 
-    try {
-      await signup({
-        variables: {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
-        }
-      });
-    } catch (err) {
-      // Error is handled in onError callback
-    }
+    // Clear validation error
+    setValidationError('');
+
+    // Execute the mutation
+    signupMutation.mutate({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password
+    });
   };
+
+  // Combine validation errors and mutation errors
+  const error = validationError || (signupMutation.error?.message ?? '');
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
@@ -88,6 +76,12 @@ export default function SignUpPage() {
             </div>
           )}
 
+          {signupMutation.isSuccess && (
+            <div className="bg-green-50 dark:bg-green-900/50 border border-green-400 text-green-700 dark:text-green-400 px-4 py-3 rounded">
+              Account created successfully! Redirecting...
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-2">
@@ -100,7 +94,8 @@ export default function SignUpPage() {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                disabled={signupMutation.isPending}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800 disabled:opacity-50"
                 placeholder="John Doe"
               />
             </div>
@@ -117,7 +112,8 @@ export default function SignUpPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                disabled={signupMutation.isPending}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800 disabled:opacity-50"
                 placeholder="Email address"
               />
             </div>
@@ -134,7 +130,8 @@ export default function SignUpPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                disabled={signupMutation.isPending}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800 disabled:opacity-50"
                 placeholder="Password (min. 6 characters)"
               />
             </div>
@@ -151,7 +148,8 @@ export default function SignUpPage() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800"
+                disabled={signupMutation.isPending}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm dark:bg-gray-800 disabled:opacity-50"
                 placeholder="Confirm your password"
               />
             </div>
@@ -160,10 +158,10 @@ export default function SignUpPage() {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={signupMutation.isPending}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating account...' : 'Sign up'}
+              {signupMutation.isPending ? 'Creating account...' : 'Sign up'}
             </button>
           </div>
 
