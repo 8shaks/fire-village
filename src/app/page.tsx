@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function Home() {
   useEffect(() => {
     // Redirect to dashboard if already authenticated
     if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -31,11 +31,9 @@ export default function Home() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2">Welcome</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Please sign in or create an account to continue
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">Please sign in or create an account to continue</p>
         </div>
-        
+
         <div className="flex flex-col space-y-4">
           <Link
             href="/login"
@@ -43,7 +41,7 @@ export default function Home() {
           >
             Login
           </Link>
-          
+
           <Link
             href="/signup"
             className="w-full bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white py-3 px-4 rounded-lg text-center hover:bg-gray-300 dark:hover:bg-gray-600 transition duration-200"
